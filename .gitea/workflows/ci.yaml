@@ -26,23 +26,16 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: "1.8.3"
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-
-      - name: Install dependencies
+      - name: Install project (PEP 621)
         run: |
-          poetry install --no-interaction --no-root
+          python -m pip install --upgrade pip
+          pip install .
 
       - name: Basic import checks
         run: |
-          poetry run python -c "import configs; from bot import Bot; print('Bot class ok')"
-          poetry run python -c "from bot import discbot; print('Global bot instance ok')"
+          python -c "import configs; from bot import Bot; print('Bot class ok')"
+          python -c "from bot import discbot; print('Global bot instance ok')"
 
       - name: Load cogs without running bot
         run: |
-          poetry run python -c "from bot import discbot; import asyncio; asyncio.run(discbot.setup()); print('Cogs loaded')"
+          python -c "from bot import discbot; import asyncio; asyncio.run(discbot.setup()); print('Cogs loaded')"
