@@ -16,7 +16,7 @@ class _Settings(BaseSettings):
     )
 
     BOT_TOKEN: Optional[str] = None
-    PREFIX: Optional[str] = '!'
+    PREFIX: Optional[str] = '/'
 
     WELCOME_CHANNEL_ID: int = 0
     ADMIN_ROLE_NAME: str = "Администратор"
