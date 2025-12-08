@@ -1,0 +1,149 @@
+# ===============================
+# Системные и скрытые файлы
+# ===============================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ===============================
+# Python
+# ===============================
+# Виртуальные окружения
+.venv/
+venv/
+env/
+env.bak/
+venv.bak/
+
+# Кэш интерпретатора
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Пакеты и сборки
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.eg
+*.egg
+*.eggs
+
+# Poetry
+poetry.lock
+.pypoetry/
+
+# Тестирование и отчеты
+.coverage
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+test/
+tests/
+Test/
+Tests/
+
+# Логи и базы данных
+*.log
+*.logs
+*.log*
+*.log.*
+*.logs.*
+log/
+logs/
+
+# Базы данных и кэш
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.dump
+*.sql
+*.bak
+*.backup
+
+# ===============================
+# Node.js / JS
+# ===============================
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# ===============================
+# Ruby
+# ===============================
+.bundle/
+vendor/bundle/
+
+# ===============================
+# Java / JVM
+# ===============================
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ===============================
+# Go
+# ===============================
+bin/
+*.exe
+
+# ===============================
+# IDE и редакторы
+# ===============================
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.iml
+
+# ===============================
+# Конфиденциальные файлы и ключи
+# ===============================
+.env
+env
+*.session
+*.key
+*.pem
+*.crt
+*.p12
+*.jks
+credentials/
+secrets/
+
+# ===============================
+# Сборка и артефакты
+# ===============================
+*.o
+*.obj
+*.dll
+*.so
+*.dylib
+*.out
+*.wheel
+*.pyc
+coverage/
+.coverage.*
+
+# ===============================
+# Файлы проекта
+# ===============================
+balance.json
