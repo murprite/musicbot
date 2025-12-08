@@ -91,8 +91,7 @@ class Bot(commands.Bot):
         logger.info(text="Запуск бота...", log_type="START")
         await self.start(use_token)
 
-    @staticmethod
-    async def on_command(ctx: commands.Context) -> None:
+    async def on_command(self, ctx: commands.Context) -> None:
         """
         Глобальное логирование всех вызванных команд.
         """

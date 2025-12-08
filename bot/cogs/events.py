@@ -93,8 +93,6 @@ class Events(Cog):
                 )
             return
 
-        await self.bot.process_commands(message)
-
     @Cog.listener()
     async def on_command_error(self, ctx: Context, error: CommandError) -> None:
         """
