@@ -2,11 +2,11 @@ from datetime import datetime
 
 import discord
 from discord.ext import tasks
-from discord.ext.commands import Bot, Cog
+from discord.ext.commands import Bot, Cog, Context, CommandError
 from discord.utils import get
 
 from configs import settings
-from middleware import logger
+from middleware.loggers import logger
 from ..storage import storage, Reminder
 
 
@@ -25,7 +25,7 @@ class Events(Cog):
         Событие запуска бота.
         Загружает данные и создаёт необходимые роли.
         """
-        logger.info(text=f"Бот запущен как {self.bot.user}")
+        logger.info(text=f"Бот запущен как {self.bot.user}", log_type="SYSTEM")
         storage.load_all()
         await self.ensure_roles_exist()
 
@@ -38,13 +38,25 @@ class Events(Cog):
         """
         new_member_role: discord.Role | None = get(member.guild.roles, name="New Member")
         if new_member_role:
-            await member.add_roles(new_member_role)
+            try:
+                await member.add_roles(new_member_role)
+            except discord.Forbidden:
+                logger.warning(
+                    text=f"Нет прав выдать роль New Member пользователю {member}",
+                    log_type="EVENT",
+                    user=str(member),
+                )
 
-        channel: discord.abc.MessageableChannel | None = self.bot.get_channel(
-            settings.WELCOME_CHANNEL_ID
-        )
+        channel = self.bot.get_channel(settings.WELCOME_CHANNEL_ID)
         if isinstance(channel, discord.TextChannel):
-            await channel.send(f"Приветствуем {member.mention} на сервере!")
+            try:
+                await channel.send(f"Приветствуем {member.mention} на сервере!")
+            except discord.HTTPException as e:
+                logger.error(
+                    text=f"Не удалось отправить приветствие для {member}: {e!r}",
+                    log_type="EVENT",
+                    user=str(member),
+                )
 
     @Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -63,11 +75,49 @@ class Events(Cog):
                 await message.channel.send(
                     f"{message.author.mention}, ваше сообщение содержит запрещённые слова."
                 )
-            except Exception:
-                pass
+                logger.info(
+                    text=f"Удалено сообщение с запрещённым словом от {message.author}: {message.content!r}",
+                    log_type="BLACKLIST",
+                    user=str(message.author),
+                )
+            except discord.Forbidden:
+                logger.warning(
+                    text=f"Нет прав удалить сообщение {message.author}: {message.content!r}",
+                    log_type="BLACKLIST",
+                    user=str(message.author),
+                )
+            except discord.HTTPException as e:
+                logger.error(
+                    text=f"Ошибка при удалении сообщения {message.author}: {e!r}",
+                    log_type="BLACKLIST",
+                    user=str(message.author),
+                )
             return
 
+        # Обработка команд ОБЯЗАТЕЛЬНО в конце, иначе команды не будут работать
         await self.bot.process_commands(message)
+
+    @Cog.listener()
+    async def on_command(self, ctx: Context) -> None:
+        """
+        Логирование всех вызванных команд.
+        """
+        logger.info(
+            text=f"Команда: {ctx.command} | Автор: {ctx.author} | Гильдия: {ctx.guild} | Сообщение: {ctx.message.content}",
+            log_type="COMMAND",
+            user=str(ctx.author),
+        )
+
+    @Cog.listener()
+    async def on_command_error(self, ctx: Context, error: CommandError) -> None:
+        """
+        Логирование ошибок команд.
+        """
+        logger.error(
+            text=f"Ошибка команды: {ctx.command} | Автор: {ctx.author} | Ошибка: {error!r}",
+            log_type="COMMAND",
+            user=str(ctx.author),
+        )
 
     async def ensure_roles_exist(self) -> None:
         """
@@ -79,18 +129,40 @@ class Events(Cog):
                 try:
                     muted_role = await guild.create_role(name="Muted")
                     for channel in guild.channels:
-                        await channel.set_permissions(
-                            muted_role, send_messages=False, speak=False
-                        )
-                except Exception:
-                    pass
+                        try:
+                            await channel.set_permissions(
+                                muted_role, send_messages=False, speak=False
+                            )
+                        except discord.Forbidden:
+                            logger.warning(
+                                text=f"Нет прав настроить права для канала {channel} в {guild}",
+                                log_type="ROLES",
+                            )
+                except discord.Forbidden:
+                    logger.warning(
+                        text=f"Нет прав создать роль Muted в {guild}",
+                        log_type="ROLES",
+                    )
+                except discord.HTTPException as e:
+                    logger.error(
+                        text=f"Ошибка при создании роли Muted в {guild}: {e!r}",
+                        log_type="ROLES",
+                    )
 
             new_member_role: discord.Role | None = get(guild.roles, name="New Member")
             if new_member_role is None:
                 try:
                     await guild.create_role(name="New Member")
-                except Exception:
-                    pass
+                except discord.Forbidden:
+                    logger.warning(
+                        text=f"Нет прав создать роль New Member в {guild}",
+                        log_type="ROLES",
+                    )
+                except discord.HTTPException as e:
+                    logger.error(
+                        text=f"Ошибка при создании роли New Member в {guild}: {e!r}",
+                        log_type="ROLES",
+                    )
 
     @tasks.loop(seconds=30)
     async def check_reminders(self) -> None:
@@ -101,16 +173,29 @@ class Events(Cog):
         now: float = datetime.now().timestamp()
         to_remove: list[Reminder] = []
 
-        for rem in storage.reminders:
+        for rem in list(storage.reminders):
             if rem.time <= now:
                 channel = self.bot.get_channel(rem.channel_id)
                 if isinstance(channel, discord.TextChannel):
-                    await channel.send(f"{rem.user_mention} Напоминание: {rem.text}")
+                    try:
+                        await channel.send(f"{rem.user_mention} Напоминание: {rem.text}")
+                        logger.info(
+                            text=f"Отправлено напоминание пользователю {rem.user_mention}: {rem.text!r}",
+                            log_type="REMINDER",
+                        )
+                    except discord.HTTPException as e:
+                        logger.error(
+                            text=f"Ошибка при отправке напоминания в канал {channel.id}: {e!r}",
+                            log_type="REMINDER",
+                        )
                 to_remove.append(rem)
 
         if to_remove:
             for rem in to_remove:
-                storage.reminders.remove(rem)
+                try:
+                    storage.reminders.remove(rem)
+                except ValueError:
+                    pass
             storage.save_reminders()
 
     @check_reminders.before_loop

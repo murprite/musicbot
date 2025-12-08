@@ -1,5 +1,4 @@
 from typing import Optional
-import logging
 
 from discord import Intents
 from discord.ext import commands
@@ -15,8 +14,6 @@ __all__ = ("Bot", "discbot")
 class Bot(commands.Bot):
     """
     Основной класс Discord-бота с методами настройки и запуска.
-
-    Поддерживает передачу token, prefix, intents и help_command в конструктор.
     """
 
     def __init__(
@@ -26,12 +23,6 @@ class Bot(commands.Bot):
         intents: Optional[Intents] = None,
         help_command: Optional[commands.HelpCommand] = None,
     ) -> None:
-        """
-        :param token: Токен бота (если None — берётся из settings.BOT_TOKEN).
-        :param prefix: Префикс команд (если None — берётся из settings.PREFIX или '!').
-        :param intents: Intents (если None — создаются стандартные + privileged).
-        :param help_command: Кастомная команда помощи.
-        """
         # Intents по умолчанию
         if intents is None:
             intents = Intents.default()
@@ -52,7 +43,6 @@ class Bot(commands.Bot):
             help_command=help_command,
         )
 
-        # Сохраняем токен и хранилище
         self._token: Optional[str] = token
         self.storage = storage  # type: ignore[assignment]
 
@@ -65,54 +55,47 @@ class Bot(commands.Bot):
 
     async def setup(self) -> None:
         """
-        Инициализация бота: логгер, cogs, логирование discord.py.
+        Инициализация бота: логгер и загрузка cogs.
         """
         logger.setup(start=True)
         logger.info(text="Настройка бота...", log_type="SYSTEM")
 
         await self.load_cogs()
 
-        logging.basicConfig(
-            level=logging.WARNING,
-            format="%(asctime)s:%(levelname)s:%(name)s: %(message)s",
-        )
-        logging.getLogger("discord").setLevel(logging.INFO)
-
     async def load_cogs(self) -> None:
         """
         Загрузить все модули cogs.
         """
+        logger.info(text="Начинаю загрузку cogs...", log_type="COGS")
+
         cogs: list[str] = [
-            "cogs.events",
-            "cogs.moderation",
-            "cogs.blacklist",
-            "cogs.reminders",
+            "bot.cogs.events",
+            "bot.cogs.moderation",
+            "bot.cogs.blacklist",
+            "bot.cogs.reminders",
         ]
         for cog in cogs:
             try:
                 await self.load_extension(cog)
-                logger.info(f"Загружен cog: {cog}", log_type="COGS")
+                logger.info(text=f"Загружен cog: {cog}", log_type="COGS")
             except Exception as e:
-                logger.error(f"Ошибка загрузки {cog}: {e}", log_type="COGS")
+                logger.error(text=f"Ошибка загрузки {cog}: {e!r}", log_type="COGS")
 
     async def start_bot(self, token: Optional[str] = None) -> None:
         """
         Запуск бота с использованием сохранённого токена или переданного.
-
-        :param token: Токен бота (если None — используется self.token).
         """
         use_token: Optional[str] = token or self.token
         if not use_token:
             error: str = "BOT_TOKEN не задан (ни в конструкторе, ни в settings)"
-            logger.error(error)
+            logger.error(text=error, log_type="START")
             raise ValueError(error)
 
         logger.info(text="Запуск бота...", log_type="START")
         await self.start(use_token)
 
 
-# Глобальный экземпляр — МОЖНО ПЕРЕДАВАТЬ token/prefix ПРЯМО ЗДЕСЬ
 discbot: Bot = Bot(
-    token=settings.BOT_TOKEN,   # кастомный токен
-    prefix=settings.PREFIX,   # кастомный префикс
+    token=settings.BOT_TOKEN,
+    prefix=settings.PREFIX,
 )

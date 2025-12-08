@@ -1,17 +1,16 @@
 from asyncio import run
 
 from bot import discbot
-from configs import settings
-from middleware import logger
+from middleware.loggers import logger
 
 
 async def main() -> None:
     """
     Точка входа для асинхронного запуска бота.
     """
-    logger.setup()
-    await discbot.start(settings.BOT_TOKEN)
-    await discbot.start_bot()
+    logger.setup()          # настройка логера
+    await discbot.setup()   # ЗАГРУЗКА COGS + настройка discord-логов
+    await discbot.start_bot()  # запуск бота (внутри возьмёт token из settings)
 
 
 if __name__ == "__main__":
