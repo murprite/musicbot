@@ -7,7 +7,7 @@ import os
 import json
 
 # --- Настройки и константы ---
-BOT_TOKEN = 'MTM0Mjc5ODAyMjg5NTA3NTMzOQ.Gqipu1.-ZEvR6Oz-dxyyXJAnr6F7aqGCvHzLLCQ0kPdak'
+BOT_TOKEN = '11'
 WELCOME_CHANNEL_ID = 1342797233250107482  # ID канала для приветствий
 ADMIN_ROLE_NAME = "Администратор"
 
