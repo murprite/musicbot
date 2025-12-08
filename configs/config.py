@@ -21,9 +21,9 @@ class _Settings(BaseSettings):
     WELCOME_CHANNEL_ID: int = 0
     ADMIN_ROLE_NAME: str = "Администратор"
 
-    WARNINGS_FILE: Path = Path("warnings.json")
-    REMINDERS_FILE: Path = Path("reminders.json")
-    BLACKLIST_FILE: Path = Path("blacklist.json")
+    WARNINGS_FILE: Path = Path("data/warnings.json")
+    REMINDERS_FILE: Path = Path("data/reminders.json")
+    BLACKLIST_FILE: Path = Path("data/blacklist.json")
 
     LOG_FILE_NAME: Path = Path("bot.log")
     LOG_LEVEL: str = "info"
