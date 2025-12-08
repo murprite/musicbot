@@ -22,6 +22,8 @@ class MyHelpCommand(HelpCommand):
             f"`{prefix}warn @пользователь [причина]` — предупреждение\n"
             f"`{prefix}warnings @пользователь` — список предупреждений\n"
             f"`{prefix}clear <кол-во>` — очистить чат\n"
-            f"`{prefix}blacklist_show/add/remove` — чёрный список\n"
+            f"`{prefix}blacklist_show` — показать чёрный список\n"
+            f"`{prefix}blacklist_add` — добавить слово чёрный список\n"
+            f"`{prefix}blacklist_remove` — удалить слово из чёрного списока\n"
         )
         await channel.send(help_text)
