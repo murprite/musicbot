@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from typing import Callable, Awaitable, Optional
-
-import datetime
+from datetime import datetime
 
 import discord
-from discord.ext import commands
+from discord.app_commands.checks import has_permissions
+from discord.ext.commands import Bot, Context, Cog, check, command
 from discord.utils import get
 
 from configs import settings
@@ -13,7 +13,7 @@ from ..storage import storage
 
 
 # Тип предиката для check (для читаемости, но не обязателен)
-CheckPredicate = Callable[[commands.Context], Awaitable[bool]]
+CheckPredicate = Callable[[Context], Awaitable[bool]]
 
 
 def is_admin():
@@ -23,7 +23,7 @@ def is_admin():
     либо у пользователя есть флаг администратора сервера.
     """
 
-    async def predicate(ctx: commands.Context) -> bool:
+    async def predicate(ctx: Context) -> bool:
         author = ctx.author
         if not isinstance(author, discord.Member):
             return False
@@ -31,10 +31,10 @@ def is_admin():
         admin_role = get(author.roles, name=settings.ADMIN_ROLE_NAME)
         return bool(admin_role) or author.guild_permissions.administrator
 
-    return commands.check(predicate)
+    return check(predicate)
 
 
-def require_guild(ctx: commands.Context) -> Optional[discord.Guild]:
+def require_guild(ctx: Context) -> Optional[discord.Guild]:
     """
     Безопасно получить guild из контекста.
 
@@ -43,21 +43,21 @@ def require_guild(ctx: commands.Context) -> Optional[discord.Guild]:
     return ctx.guild
 
 
-class Moderation(commands.Cog):
+class Moderation(Cog):
     """
     Cog с модерационными командами:
     rules, kick, ban, unban, mute, unmute, warn, warnings, clear.
     """
 
-    def __init__(self, bot: commands.Bot) -> None:
+    def __init__(self, bot: Bot) -> None:
         """
         :param bot: Экземпляр бота, к которому привязан cog.
         """
-        self.bot: commands.Bot = bot
+        self.bot: Bot = bot
 
-    @commands.command()
+    @command()
     @is_admin()
-    async def rules(self, ctx: commands.Context) -> None:
+    async def rules(self, ctx: Context) -> None:
         """
         Показать правила сервера.
 
@@ -73,11 +73,11 @@ class Moderation(commands.Cog):
         )
         await ctx.send(rules_text)
 
-    @commands.command()
+    @command()
     @is_admin()
     async def kick(
         self,
-        ctx: commands.Context,
+        ctx: Context,
         member: discord.Member,
         *,
         reason: Optional[str] = None,
@@ -97,11 +97,11 @@ class Moderation(commands.Cog):
         except discord.HTTPException:
             await ctx.send(f"Не удалось исключить {member} из-за ошибки Discord.")
 
-    @commands.command()
+    @command()
     @is_admin()
     async def ban(
         self,
-        ctx: commands.Context,
+        ctx: Context,
         member: discord.Member,
         *,
         reason: Optional[str] = None,
@@ -121,9 +121,9 @@ class Moderation(commands.Cog):
         except discord.HTTPException:
             await ctx.send(f"Не удалось забанить {member} из-за ошибки Discord.")
 
-    @commands.command()
-    @commands.has_permissions(ban_members=True)
-    async def unban(self, ctx: commands.Context, *, member_name: str) -> None:
+    @command()
+    @has_permissions(ban_members=True)
+    async def unban(self, ctx: Context, *, member_name: str) -> None:
         """
         Разбанить пользователя по имени или тегу.
 
@@ -190,11 +190,11 @@ class Moderation(commands.Cog):
             msg_lines.append(f"- {user.name}#{user.discriminator}")
         await ctx.send("\n".join(msg_lines))
 
-    @commands.command()
+    @command()
     @is_admin()
     async def mute(
         self,
-        ctx: commands.Context,
+        ctx: Context,
         member: discord.Member,
         *,
         reason: Optional[str] = None,
@@ -224,9 +224,9 @@ class Moderation(commands.Cog):
         except discord.HTTPException:
             await ctx.send("Не удалось выдать мут из-за ошибки Discord.")
 
-    @commands.command()
+    @command()
     @is_admin()
-    async def unmute(self, ctx: commands.Context, member: discord.Member) -> None:
+    async def unmute(self, ctx: Context, member: discord.Member) -> None:
         """
         Снять мут с участника.
 
@@ -251,11 +251,11 @@ class Moderation(commands.Cog):
         except discord.HTTPException:
             await ctx.send("Не удалось снять мут из-за ошибки Discord.")
 
-    @commands.command()
+    @command()
     @is_admin()
     async def warn(
         self,
-        ctx: commands.Context,
+        ctx: Context,
         member: discord.Member,
         *,
         reason: Optional[str] = None,
@@ -271,7 +271,7 @@ class Moderation(commands.Cog):
         storage.user_warnings.setdefault(user_id, []).append(
             {
                 "reason": reason or "Без причины",
-                "date": datetime.datetime.now().isoformat(
+                "date": datetime.now().isoformat(
                     sep=" ", timespec="seconds"
                 ),
             }
@@ -281,8 +281,8 @@ class Moderation(commands.Cog):
             f"{member} получил предупреждение. Причина: {reason or 'Без причины'}"
         )
 
-    @commands.command()
-    async def warnings(self, ctx: commands.Context, member: discord.Member) -> None:
+    @command()
+    async def warnings(self, ctx: Context, member: discord.Member) -> None:
         """
         Показать предупреждения участника.
 
@@ -300,9 +300,9 @@ class Moderation(commands.Cog):
             lines.append(f"{i}. {w['reason']} ({w['date']})")
         await ctx.send("\n".join(lines))
 
-    @commands.command()
+    @command()
     @is_admin()
-    async def clear(self, ctx: commands.Context, amount: int) -> None:
+    async def clear(self, ctx: Context, amount: int) -> None:
         """
         Очистить указанное количество сообщений в канале.
 
@@ -320,7 +320,7 @@ class Moderation(commands.Cog):
         )
 
 
-async def setup(bot: commands.Bot) -> None:
+async def setup(bot: Bot) -> None:
     """
     Зарегистрировать cog в боте.
 

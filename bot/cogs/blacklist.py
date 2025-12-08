@@ -1,20 +1,20 @@
-from discord.ext import commands
+from discord.ext.commands import Cog, Bot, command, Context
 
 from ..storage import storage
 from .moderation import is_admin
 
 
-class Blacklist(commands.Cog):
+class Blacklist(Cog):
     """
     Cog для управления чёрным списком слов.
     """
 
-    def __init__(self, bot: commands.Bot) -> None:
-        self.bot: commands.Bot = bot
+    def __init__(self, bot: Bot) -> None:
+        self.bot: Bot = bot
 
-    @commands.command()
+    @command()
     @is_admin()
-    async def blacklist_show(self, ctx: commands.Context) -> None:
+    async def blacklist_show(self, ctx: Context) -> None:
         """
         Показать текущий чёрный список слов.
 
@@ -25,9 +25,9 @@ class Blacklist(commands.Cog):
         else:
             await ctx.send("Чёрный список:\n" + ", ".join(storage.blacklist))
 
-    @commands.command()
+    @command()
     @is_admin()
-    async def blacklist_add(self, ctx: commands.Context, *, word: str) -> None:
+    async def blacklist_add(self, ctx: Context, *, word: str) -> None:
         """
         Добавить слово в чёрный список.
 
@@ -43,9 +43,9 @@ class Blacklist(commands.Cog):
         storage.save_blacklist()
         await ctx.send(f"Слово `{word_lower}` добавлено в чёрный список.")
 
-    @commands.command()
+    @command()
     @is_admin()
-    async def blacklist_remove(self, ctx: commands.Context, *, word: str) -> None:
+    async def blacklist_remove(self, ctx: Context, *, word: str) -> None:
         """
         Удалить слово из чёрного списка.
 
@@ -62,5 +62,5 @@ class Blacklist(commands.Cog):
         await ctx.send(f"Слово `{word_lower}` удалено из чёрного списка.")
 
 
-async def setup(bot: commands.Bot) -> None:
+async def setup(bot: Bot) -> None:
     await bot.add_cog(Blacklist(bot))

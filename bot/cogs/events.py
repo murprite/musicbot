@@ -1,7 +1,8 @@
-import datetime
+from datetime import datetime
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import tasks
+from discord.ext.commands import Bot, Cog
 from discord.utils import get
 
 from configs import settings
@@ -9,16 +10,16 @@ from middleware import logger
 from ..storage import storage, Reminder
 
 
-class Events(commands.Cog):
+class Events(Cog):
     """
     Cog с обработчиками событий и фоновой задачей напоминаний.
     """
 
-    def __init__(self, bot: commands.Bot) -> None:
-        self.bot: commands.Bot = bot
+    def __init__(self, bot: Bot) -> None:
+        self.bot: Bot = bot
         self.check_reminders.start()
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_ready(self) -> None:
         """
         Событие запуска бота.
@@ -28,7 +29,7 @@ class Events(commands.Cog):
         storage.load_all()
         await self.ensure_roles_exist()
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
         """
         Событие вступления нового участника на сервер.
@@ -45,7 +46,7 @@ class Events(commands.Cog):
         if isinstance(channel, discord.TextChannel):
             await channel.send(f"Приветствуем {member.mention} на сервере!")
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         """
         Событие получения сообщения. Проверяет чёрный список слов.
@@ -97,7 +98,7 @@ class Events(commands.Cog):
         Фоновая задача, которая каждые 30 секунд проверяет напоминания
         и отправляет просроченные.
         """
-        now: float = datetime.datetime.now().timestamp()
+        now: float = datetime.now().timestamp()
         to_remove: list[Reminder] = []
 
         for rem in storage.reminders:
@@ -120,7 +121,7 @@ class Events(commands.Cog):
         await self.bot.wait_until_ready()
 
 
-async def setup(bot: commands.Bot) -> None:
+async def setup(bot: Bot) -> None:
     """
     Функция для загрузки Cog.
 

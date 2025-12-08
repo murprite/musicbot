@@ -1,21 +1,21 @@
 from datetime import datetime, timedelta
 
-from discord.ext import commands
+from discord.ext.commands import Cog, Bot, Context, group
 
 from ..storage import storage, Reminder
 from .moderation import is_admin
 
 
-class Reminders(commands.Cog):
+class Reminders(Cog):
     """
     Cog для управления напоминаниями: add, list, remove.
     """
-    def __init__(self, bot: commands.Bot) -> None:
-        self.bot: commands.Bot = bot
+    def __init__(self, bot: Bot) -> None:
+        self.bot: Bot = bot
 
-    @commands.group()
+    @group()
     @is_admin()
-    async def reminder(self, ctx: commands.Context) -> None:
+    async def reminder(self, ctx: Context) -> None:
         """
         Группа команд напоминаний.
 
@@ -29,7 +29,7 @@ class Reminders(commands.Cog):
 
     @reminder.command(name="add")
     async def reminder_add(
-        self, ctx: commands.Context, minutes: int, *, text: str
+        self, ctx: Context, minutes: int, *, text: str
     ) -> None:
         """
         Добавить новое напоминание.
@@ -55,7 +55,7 @@ class Reminders(commands.Cog):
         await ctx.send(f"Напоминание добавлено через {minutes} минут: {text}")
 
     @reminder.command(name="list")
-    async def reminder_list(self, ctx: commands.Context) -> None:
+    async def reminder_list(self, ctx: Context) -> None:
         """
         Показать список активных напоминаний.
 
@@ -74,7 +74,7 @@ class Reminders(commands.Cog):
         await ctx.send(msg)
 
     @reminder.command(name="remove")
-    async def reminder_remove(self, ctx: commands.Context, number: int) -> None:
+    async def reminder_remove(self, ctx: Context, number: int) -> None:
         """
         Удалить напоминание по номеру.
 
@@ -90,5 +90,5 @@ class Reminders(commands.Cog):
         await ctx.send(f"Удалено напоминание: {removed.text}")
 
 
-async def setup(bot: commands.Bot) -> None:
+async def setup(bot: Bot) -> None:
     await bot.add_cog(Reminders(bot))
