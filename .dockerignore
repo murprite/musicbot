@@ -1,0 +1,134 @@
+# -------------------------------
+# Системные и скрытые каталоги
+# -------------------------------
+.git/
+.gitea/
+.hg/
+.svn/
+.gitignore
+.dockerignore
+.gitattributes
+
+# -------------------------------
+# Виртуальные окружения, кэш и зависимости
+# -------------------------------
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.eggs/
+*.pytest_cache/
+.mypy_cache/
+.cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# Ruby
+.bundle/
+vendor/bundle/
+
+# Java / JVM
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Go
+bin/
+*.exe
+
+# -------------------------------
+# IDE и редакторы
+# -------------------------------
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.iml
+
+# -------------------------------
+# Логи и временные файлы
+# -------------------------------
+*.log
+*.logs
+*.log.*
+*.logs.*
+Logs/
+Log/
+dist/
+build/
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# -------------------------------
+# Конфиденциальные файлы и настройки
+# -------------------------------
+.env
+env/
+*.session
+*.key
+*.pem
+*.crt
+*.p12
+*.jks
+credentials/
+secrets/
+
+# -------------------------------
+# Документация, тесты и примеры
+# -------------------------------
+docs/
+examples/
+tests/
+test/
+*.test
+*.tests
+README.md
+LICENSE
+
+# -------------------------------
+# Базы данных и кэш
+# -------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.dump
+*.sql
+*.bak
+*.backup
+
+# -------------------------------
+# Сборка и артефакты
+# -------------------------------
+*.o
+*.obj
+*.dll
+*.so
+*.dylib
+*.out
+*.egg
+*.wheel
+*.pyc
+coverage/
+.coverage.*
+
+# -------------------------------
+# Файлы проекта
+# -------------------------------
+balance.json
