@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  basic-checks:
+    runs-on: ubuntu-latest
+
+    env:
+      BOT_TOKEN: "TEST_TOKEN"
+      PREFIX: "!"
+      WELCOME_CHANNEL_ID: "123456789012345678"
+      ADMIN_ROLE_NAME: "Администратор"
+      LOG_LEVEL: "info"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: "1.8.3"
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Install dependencies
+        run: |
+          poetry install --no-interaction --no-root
+
+      - name: Basic import checks
+        run: |
+          poetry run python -c "import configs; from bot import Bot; print('Bot class ok')"
+          poetry run python -c "from bot import discbot; print('Global bot instance ok')"
+
+      - name: Load cogs without running bot
+        run: |
+          poetry run python -c "from bot import discbot; import asyncio; asyncio.run(discbot.setup()); print('Cogs loaded')"
