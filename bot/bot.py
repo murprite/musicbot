@@ -23,17 +23,14 @@ class Bot(commands.Bot):
         intents: Optional[Intents] = None,
         help_command: Optional[commands.HelpCommand] = None,
     ) -> None:
-        # Intents по умолчанию
         if intents is None:
             intents = Intents.default()
             intents.guilds = True
-            intents.message_content = True  # Требует включения в Developer Portal
+            intents.message_content = True
             intents.members = True
 
-        # Префикс по умолчанию
         command_prefix: str = prefix or getattr(settings, "PREFIX", "!")
 
-        # Help-команда по умолчанию
         if help_command is None:
             help_command = MyHelpCommand()
 
@@ -93,6 +90,20 @@ class Bot(commands.Bot):
 
         logger.info(text="Запуск бота...", log_type="START")
         await self.start(use_token)
+
+    @staticmethod
+    async def on_command(ctx: commands.Context) -> None:
+        """
+        Глобальное логирование всех вызванных команд.
+        """
+        logger.info(
+            text=(
+                f"Команда: {ctx.command} | Автор: {ctx.author} | "
+                f"Гильдия: {ctx.guild} | Сообщение: {ctx.message.content}"
+            ),
+            log_type="COMMAND",
+            user=str(ctx.author),
+        )
 
 
 discbot: Bot = Bot(

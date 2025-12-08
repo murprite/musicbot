@@ -61,9 +61,8 @@ class Events(Cog):
     @Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         """
-        Событие получения сообщения. Проверяет чёрный список слов.
-
-        :param message: Полученное сообщение.
+        Событие получения сообщения. Проверяет чёрный список слов
+        и передаёт сообщение обработчику команд.
         """
         if message.author.bot or not message.content:
             return
@@ -94,19 +93,7 @@ class Events(Cog):
                 )
             return
 
-        # Обработка команд ОБЯЗАТЕЛЬНО в конце, иначе команды не будут работать
         await self.bot.process_commands(message)
-
-    @Cog.listener()
-    async def on_command(self, ctx: Context) -> None:
-        """
-        Логирование всех вызванных команд.
-        """
-        logger.info(
-            text=f"Команда: {ctx.command} | Автор: {ctx.author} | Гильдия: {ctx.guild} | Сообщение: {ctx.message.content}",
-            log_type="COMMAND",
-            user=str(ctx.author),
-        )
 
     @Cog.listener()
     async def on_command_error(self, ctx: Context, error: CommandError) -> None:
