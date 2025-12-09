@@ -113,6 +113,9 @@ class Moderation(Cog):
         :param member: Участник для бана.
         :param reason: Причина бана.
         """
+        user_id: str = str(member.id)
+        storage.user_warnings.pop(user_id,None)
+        storage.save_warnings()
         try:
             await member.ban(reason=reason)
             await ctx.send(f"{member} был забанен. Причина: {reason}")
@@ -267,6 +270,7 @@ class Moderation(Cog):
         :param member: Участник.
         :param reason: Причина предупреждения.
         """
+        max_warning= 3
         user_id: str = str(member.id)
         storage.user_warnings.setdefault(user_id, []).append(
             {
@@ -277,9 +281,14 @@ class Moderation(Cog):
             }
         )
         storage.save_warnings()
+        warns_count = len(storage.user_warnings[user_id])
         await ctx.send(
-            f"{member} получил предупреждение. Причина: {reason or 'Без причины'}"
+            f"{member} получил {warns_count} предупреждение. Причина: {reason or 'Без причины'}. До бана осталось {max_warning-warns_count} предупреждения."
         )
+
+        if warns_count >= max_warning:
+            await self.ban(ctx,member,reason=f"Превышен лимит предупреждений ({warns_count})")
+
 
     @command()
     async def warnings(self, ctx: Context, member: discord.Member) -> None:
