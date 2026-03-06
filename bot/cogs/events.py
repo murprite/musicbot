@@ -20,6 +20,69 @@ class Events(Cog):
         self.check_reminders.start()
 
     @Cog.listener()
+    async def on_presence_update(self, before: discord.Member, after: discord.Member) -> None:
+        """
+        Следим за конкретным пользователем и меняем ник на '[AFK] Ник' при уходе в Idle,
+        а при возвращении восстанавливаем оригинальный ник.
+        """
+        afk_nickname = getattr(settings, "AFK_NICKNAME", "AFK")
+        # если статус не изменился — выходим
+        if before.status == after.status:
+            return
+        # словарь для хранения оригинального ника
+        if not hasattr(self, 'original_nick'):
+            self.original_nick = {}
+
+        # пользователь ушёл в AFK/Idle
+        if after.status == discord.Status.idle:
+            # если уже AFK, ничего не делаем
+            if after.nick and after.nick.startswith(afk_nickname):
+                return
+
+            # сохраняем оригинальный ник
+            self.original_nick[after.id] = after.nick or after.name
+
+            try:
+                await after.edit(nick=afk_nickname)
+                logger.info(
+                    text=f"{after} ушёл в AFK, ник изменён",
+                    log_type="PRESENCE",
+                    user=str(after),
+                )
+            except discord.Forbidden:
+                logger.warning(
+                    text=f"Нет прав изменить ник {after}",
+                    log_type="PRESENCE",
+                )
+            except discord.HTTPException as e:
+                logger.error(
+                    text=f"Ошибка смены ника {after}: {e!r}",
+                    log_type="PRESENCE",
+                )
+
+        # пользователь вернулся из AFK
+        elif before.status == discord.Status.idle and after.status != discord.Status.idle:
+            original = self.original_nick.get(after.id)
+            if original:
+                try:
+                    await after.edit(nick=original)
+                    logger.info(
+                        text=f"{after} вернулся из AFK, ник восстановлен",
+                        log_type="PRESENCE",
+                        user=str(after),
+                    )
+                    del self.original_nick[after.id]  # убираем из словаря
+                except discord.Forbidden:
+                    logger.warning(
+                        text=f"Нет прав вернуть ник {after}",
+                        log_type="PRESENCE",
+                    )
+                except discord.HTTPException as e:
+                    logger.error(
+                        text=f"Ошибка возврата ника {after}: {e!r}",
+                        log_type="PRESENCE",
+                    )
+    @Cog.listener()
     async def on_ready(self) -> None:
         """
         Событие запуска бота.

@@ -41,5 +41,7 @@ class Slash(commands.Cog):
         )
 
 
+
+
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Slash(bot))

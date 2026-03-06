@@ -20,6 +20,7 @@ class _Settings(BaseSettings):
 
     WELCOME_CHANNEL_ID: int = 0
     ADMIN_ROLE_NAME: str = "Администратор"
+    AFK_NICKNAME:str ="AFK"
 
     WARNINGS_FILE: Path = Path("data/warnings.json")
     REMINDERS_FILE: Path = Path("data/reminders.json")
@@ -52,6 +53,13 @@ class _Settings(BaseSettings):
         if v.lower() not in allowed:
             raise ValueError(f"LOG_LEVEL должен быть одним из: {', '.join(allowed)}")
         return v.lower()
+
+    @field_validator("AFK_NICKNAME")
+    def validate_afk_nickname(cls, v: str) -> str:
+        # если пустая строка или None, используем дефолт "AFK"
+        if not v or not v.strip():
+            return "AFK"
+        return v.strip()
 
     @field_validator("WARNINGS_FILE", "REMINDERS_FILE", "BLACKLIST_FILE", "LOG_FILE_NAME", mode="before")
     def validate_paths(cls, v) -> Optional[Path]:

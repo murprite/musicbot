@@ -29,6 +29,7 @@ class Bot(commands.Bot):
             intents.guilds = True
             intents.message_content = True
             intents.members = True
+            intents.presences = True
 
         command_prefix: str = prefix or getattr(settings, "PREFIX", "!")
 
