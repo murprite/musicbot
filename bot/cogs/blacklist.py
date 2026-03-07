@@ -1,5 +1,5 @@
 from discord.ext.commands import Cog, Bot, command, Context
-
+import discord
 from ..storage import storage
 from .moderation import is_admin
 
@@ -12,7 +12,10 @@ class Blacklist(Cog):
     def __init__(self, bot: Bot) -> None:
         self.bot: Bot = bot
 
-    @command()
+    @discord.app_commands.command(
+        name="blacklist_show",
+        description="Показать текущий чёрный список слов",
+    )
     @is_admin()
     async def blacklist_show(self, ctx: Context) -> None:
         """
@@ -25,7 +28,10 @@ class Blacklist(Cog):
         else:
             await ctx.send("Чёрный список:\n" + ", ".join(storage.blacklist))
 
-    @command()
+    @discord.app_commands.command(
+        name="blacklist_add",
+        description="Добавить слово в чёрный список",
+    )
     @is_admin()
     async def blacklist_add(self, ctx: Context, *, word: str) -> None:
         """
@@ -43,7 +49,10 @@ class Blacklist(Cog):
         storage.save_blacklist()
         await ctx.send(f"Слово `{word_lower}` добавлено в чёрный список.")
 
-    @command()
+    @discord.app_commands.command(
+        name="blacklist_remove",
+        description="Удалить слово из чёрного списка",
+    )
     @is_admin()
     async def blacklist_remove(self, ctx: Context, *, word: str) -> None:
         """

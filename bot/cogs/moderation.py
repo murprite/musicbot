@@ -55,25 +55,11 @@ class Moderation(Cog):
         """
         self.bot: Bot = bot
 
-    @command()
-    @is_admin()
-    async def rules(self, ctx: Context) -> None:
-        """
-        Показать правила сервера.
 
-        :param ctx: Контекст команды.
-        """
-        rules_text: str = (
-            "**Правила сервера:**\n"
-            "1. Уважайте других участников.\n"
-            "2. Запрещена реклама и спам.\n"
-            "3. Не используйте запрещённые слова.\n"
-            "4. Соблюдайте тематику каналов.\n"
-            "5. Выполняйте указания модераторов.\n"
-        )
-        await ctx.send(rules_text)
-
-    @command()
+    @discord.app_commands.command(
+        name="kick",
+        description="Исключить участника с сервера",
+    )
     @is_admin()
     async def kick(
         self,
@@ -97,15 +83,12 @@ class Moderation(Cog):
         except discord.HTTPException:
             await ctx.send(f"Не удалось исключить {member} из-за ошибки Discord.")
 
-    @command()
+    @discord.app_commands.command(
+        name="ban",
+        description="Забанить участника на сервере",
+    )
     @is_admin()
-    async def ban(
-        self,
-        ctx: Context,
-        member: discord.Member,
-        *,
-        reason: Optional[str] = None,
-    ) -> None:
+    async def ban(self,ctx: Context,member: discord.Member,*,reason: Optional[str] = None) -> None:
         """
         Забанить участника на сервере.
 
@@ -124,7 +107,10 @@ class Moderation(Cog):
         except discord.HTTPException:
             await ctx.send(f"Не удалось забанить {member} из-за ошибки Discord.")
 
-    @command()
+    @discord.app_commands.command(
+        name="unban",
+        description="Разбанить пользователя по имени или тегу",
+    )
     @has_permissions(ban_members=True)
     async def unban(self, ctx: Context, *, member_name: str) -> None:
         """
@@ -193,7 +179,10 @@ class Moderation(Cog):
             msg_lines.append(f"- {user.name}#{user.discriminator}")
         await ctx.send("\n".join(msg_lines))
 
-    @command()
+    @discord.app_commands.command(
+        name="mute",
+        description="Выдать участнику мут",
+    )
     @is_admin()
     async def mute(
         self,
@@ -227,7 +216,10 @@ class Moderation(Cog):
         except discord.HTTPException:
             await ctx.send("Не удалось выдать мут из-за ошибки Discord.")
 
-    @command()
+    @discord.app_commands.command(
+        name="unmute",
+        description="Снять мут с участника",
+    )
     @is_admin()
     async def unmute(self, ctx: Context, member: discord.Member) -> None:
         """
@@ -254,7 +246,10 @@ class Moderation(Cog):
         except discord.HTTPException:
             await ctx.send("Не удалось снять мут из-за ошибки Discord.")
 
-    @command()
+    @discord.app_commands.command(
+        name="warn",
+        description="Выдать предупреждение участнику",
+    )
     @is_admin()
     async def warn(
         self,
@@ -289,8 +284,10 @@ class Moderation(Cog):
         if warns_count >= max_warning:
             await self.ban(ctx,member,reason=f"Превышен лимит предупреждений ({warns_count})")
 
-
-    @command()
+    @discord.app_commands.command(
+        name="warnings",
+        description="Показать предупреждения участника",
+    )
     async def warnings(self, ctx: Context, member: discord.Member) -> None:
         """
         Показать предупреждения участника.
@@ -309,7 +306,10 @@ class Moderation(Cog):
             lines.append(f"{i}. {w['reason']} ({w['date']})")
         await ctx.send("\n".join(lines))
 
-    @command()
+    @discord.app_commands.command(
+        name="clear",
+        description="Очистить указанное количество сообщений в канале",
+    )
     @is_admin()
     async def clear(self, ctx: Context, amount: int) -> None:
         """

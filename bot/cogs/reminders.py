@@ -1,94 +1,74 @@
 from datetime import datetime, timedelta
+from typing import Optional
 
-from discord.ext.commands import Cog, Bot, Context, group
+import discord
+from discord.ext import commands
+from discord import app_commands
 
 from ..storage import storage, Reminder
 from .moderation import is_admin
 
 
-class Reminders(Cog):
-    """
-    Cog для управления напоминаниями: add, list, remove.
-    """
-    def __init__(self, bot: Bot) -> None:
-        self.bot: Bot = bot
+class Reminders(commands.Cog):
+    """Cog для управления напоминаниями: add, list, remove через slash-команды."""
 
-    @group()
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    reminder_group = app_commands.Group(name="reminder", description="Управление напоминаниями")
+
+    @reminder_group.command(name="add", description="Добавить новое напоминание")
     @is_admin()
-    async def reminder(self, ctx: Context) -> None:
-        """
-        Группа команд напоминаний.
-
-        :param ctx: Контекст команды.
-        """
-        if ctx.invoked_subcommand is None:
-            await ctx.send(
-                "Используйте `!reminder add <минуты> <текст>`, "
-                "`!reminder list` или `!reminder remove <номер>`"
-            )
-
-    @reminder.command(name="add")
+    @app_commands.describe(minutes="Через сколько минут сработает напоминание", text="Текст напоминания")
     async def reminder_add(
-        self, ctx: Context, minutes: int, *, text: str
+        self, interaction: discord.Interaction, minutes: int, text: str
     ) -> None:
-        """
-        Добавить новое напоминание.
-
-        :param ctx: Контекст команды.
-        :param minutes: Через сколько минут сработает напоминание.
-        :param text: Текст напоминания.
-        """
         if minutes <= 0:
-            await ctx.send("Время должно быть положительным числом минут.")
+            await interaction.response.send_message(
+                "Время должно быть положительным числом минут.", ephemeral=True
+            )
             return
 
-        remind_time: datetime = datetime.now() + timedelta(minutes=minutes)
+        remind_time = datetime.now() + timedelta(minutes=minutes)
         storage.reminders.append(
             Reminder(
                 time=remind_time.timestamp(),
-                channel_id=ctx.channel.id,  # type: ignore[assignment]
-                user_mention=ctx.author.mention,  # type: ignore[union-attr]
+                channel_id=interaction.channel.id,  # type: ignore
+                user_mention=interaction.user.mention,  # type: ignore
                 text=text,
             )
         )
         storage.save_reminders()
-        await ctx.send(f"Напоминание добавлено через {minutes} минут: {text}")
+        await interaction.response.send_message(
+            f"✅ Напоминание добавлено через {minutes} минут: {text}"
+        )
 
-    @reminder.command(name="list")
-    async def reminder_list(self, ctx: Context) -> None:
-        """
-        Показать список активных напоминаний.
-
-        :param ctx: Контекст команды.
-        """
+    @reminder_group.command(name="list", description="Показать список активных напоминаний")
+    @is_admin()
+    async def reminder_list(self, interaction: discord.Interaction) -> None:
         if not storage.reminders:
-            await ctx.send("Активных напоминаний нет.")
+            await interaction.response.send_message("Активных напоминаний нет.", ephemeral=True)
             return
 
-        msg: str = "Активные напоминания:\n"
+        msg = "📋 Активные напоминания:\n"
         for i, rem in enumerate(storage.reminders, 1):
-            t_str: str = datetime.fromtimestamp(rem.time).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            t_str = datetime.fromtimestamp(rem.time).strftime("%Y-%m-%d %H:%M:%S")
             msg += f"{i}. До {t_str} — {rem.text} (от {rem.user_mention})\n"
-        await ctx.send(msg)
 
-    @reminder.command(name="remove")
-    async def reminder_remove(self, ctx: Context, number: int) -> None:
-        """
-        Удалить напоминание по номеру.
+        await interaction.response.send_message(msg)
 
-        :param ctx: Контекст команды.
-        :param number: Порядковый номер напоминания.
-        """
+    @reminder_group.command(name="remove", description="Удалить напоминание по номеру")
+    @is_admin()
+    @app_commands.describe(number="Номер напоминания из списка")
+    async def reminder_remove(self, interaction: discord.Interaction, number: int) -> None:
         if number <= 0 or number > len(storage.reminders):
-            await ctx.send("Неверный номер напоминания.")
+            await interaction.response.send_message("❌ Неверный номер напоминания.", ephemeral=True)
             return
 
-        removed: Reminder = storage.reminders.pop(number - 1)
+        removed = storage.reminders.pop(number - 1)
         storage.save_reminders()
-        await ctx.send(f"Удалено напоминание: {removed.text}")
+        await interaction.response.send_message(f"✅ Удалено напоминание: {removed.text}")
 
 
-async def setup(bot: Bot) -> None:
+async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Reminders(bot))
