@@ -30,6 +30,7 @@ class Bot(commands.Bot):
             intents.message_content = True
             intents.members = True
             intents.presences = True
+            intents.voice_states = True
 
         command_prefix: str = prefix or getattr(settings, "PREFIX", "!")
 
@@ -74,6 +75,7 @@ class Bot(commands.Bot):
             "bot.cogs.blacklist",
             "bot.cogs.reminders",
             "bot.cogs.slash",
+            "bot.cogs.music",
         ]
         for cog in cogs:
             try:
