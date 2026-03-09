@@ -12,7 +12,6 @@ RUN apt-get update \
         nodejs \
         npm \
         build-essential \
-        curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
@@ -34,8 +33,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ffmpeg \
         nodejs \
+        npm \
     && rm -rf /var/lib/apt/lists/*
 
+RUN npm install -g deno
 # Копируем python пакеты
 COPY --from=builder /usr/local/lib/python3.13 /usr/local/lib/python3.13
 COPY --from=builder /usr/local/bin /usr/local/bin
