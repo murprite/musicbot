@@ -16,9 +16,7 @@ dependencies = [
     "pynacl(>=1.6.2)",
     "discord(>=2.3.2,<3.0.0)",
     "davey(>=0.1.4)"
-    ]
-
-
+]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
