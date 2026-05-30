@@ -1,5 +1,6 @@
 from typing import Optional
 
+import discord
 from discord import Intents
 from discord.ext import commands
 
@@ -75,7 +76,7 @@ class Bot(commands.Bot):
             "bot.cogs.blacklist",
             "bot.cogs.reminders",
             "bot.cogs.slash",
-            "bot.cogs.music",
+            "bot.cogs.musiclava",
         ]
         for cog in cogs:
             try:
@@ -88,6 +89,7 @@ class Bot(commands.Bot):
         """
         Хук discord.py 2.x: вызывается перед подключением к Gateway.
         Здесь синхронизируем slash-команды.
+
         """
         await self.tree.sync()
         logger.info(text="Slash-команды синхронизированы", log_type="SYSTEM")
@@ -118,6 +120,7 @@ class Bot(commands.Bot):
             log_type="COMMAND",
             user=str(ctx.author),
         )
+        
 
 
 discbot: Bot = Bot(

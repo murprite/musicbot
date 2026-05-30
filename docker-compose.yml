@@ -1,0 +1,18 @@
+services:
+  bot:
+    image: bot
+    build: ./mainbot
+    env_file:
+      - .env
+    depends_on:
+      - lavalink
+
+  lavalink:
+    image: lavalink
+    build: ./server
+    env_file:
+      - .env
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    volumes:
+      - ./server/application.yml:/opt/Lavalink/application.yml:ro

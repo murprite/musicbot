@@ -2,13 +2,16 @@ from __future__ import annotations
 import asyncio
 from typing import Dict, List, Any, Optional
 
+from vkpymusic.vk_api import VkApiException
+
 from middleware import logger
 import discord
 from discord.ext import commands
 import yt_dlp
 
-COG_TYPE="Music"
+from vkpymusic import TokenReceiver, Service
 
+COG_TYPE="Music"
 # yt-dlp конфиг с поддержкой поиска и node
 YTDL_OPTIONS: Dict[str, Any] = {
     "format": "bestaudio/best",
@@ -24,12 +27,11 @@ YTDL_OPTIONS: Dict[str, Any] = {
     # }
 
 }
-
 FFMPEG_OPTIONS: Dict[str, str] = {
     "options": "-vn",
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 }
-
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
 ytdl = yt_dlp.YoutubeDL(YTDL_OPTIONS)
 
 
@@ -37,6 +39,7 @@ class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.queue: Dict[int, List[Dict[str, str]]] = {}
+        self.vk_token = None
         logger.info(text="Инициализация Music", log_type="cog")
 
     @discord.app_commands.command(name="queue", description="Посмотреть очередь")
@@ -51,6 +54,80 @@ class Music(commands.Cog):
 
         await interaction.response.send_message(f"Текущая очередь:\n{safeQueue}")
 
+    async def __get_token(self):
+        logger.warning(
+            text=f"Achtung, ввод логина/пароля от VK для получения токена",
+            log_type="cog"
+        )
+
+        login = input("Логин:")
+        password = input("Пароль:")
+
+        tokenReciever = TokenReceiver(login, password)
+        try:
+            if tokenReciever.auth():
+                logger.info(
+                    text=f"Получен токен!",
+                    log_type="cog"
+                )
+                self.vk_token = tokenReciever.get_token()
+                print(self.vk_token)
+        except VkApiException:
+            logger.info(
+                text=f"Ошибка при получении токена",
+                log_type="cog"
+            )
+        return self.vk_token
+
+    @discord.app_commands.command(name="vkplaylist", description="Играть плейлист на основе этой песни")
+    async def vk_playlist_l(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        TIME = "bebra"
+        self.vk_token = TIME
+        if self.vk_token is None:
+            await self.__get_token()
+
+        service = Service(USER_AGENT, self.vk_token)
+        playlist = await service.get_recommendations_async(song_id=2001897990_146897990)
+        voice_client = await self.connect_voice(interaction)
+        guild_id = interaction.guild.id
+        title = playlist[0].title
+        author = playlist[0].artist
+
+        data = await self.get_audio(author + " - " + title, interaction)
+
+        if not data:
+            await interaction.followup.send("❌ Не удалось найти трек.")
+            return
+
+        def after_playing(error):
+            logger.info(text=f"Включаем следующий трек...", log_type="cog")
+            fut = asyncio.run_coroutine_threadsafe(self.play_next(guild_id, interaction.channel), self.bot.loop)
+            try:
+                fut.result()
+            except Exception:
+                pass
+
+        stream_url = data["url"]
+
+        source = discord.FFmpegOpusAudio(
+            stream_url,
+            executable="ffmpeg",
+            **FFMPEG_OPTIONS
+        )
+
+        self.queue[guild_id].append({"title" : playlist[0].title, "stream_url" : stream_url})
+
+        await interaction.response.send_message(f"{playlist[0].title} - {playlist[0].artist}", ephemeral=True)
+
+        voice_client.play(source, after=after_playing)
+
+    @discord.app_commands.command(name="vkplaylist_l", description="Использовать плейлист VK по алгоритмам")
+    async def vk_playlist(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+
+        if self.vk_token is None:
+            await self.__get_token()
 
     async def connect_voice(self, interaction: discord.Interaction) -> Optional[discord.VoiceClient]:
         if not interaction.user.voice or not interaction.user.voice.channel:
@@ -197,6 +274,21 @@ class Music(commands.Cog):
         if voice_client:
             await voice_client.disconnect()
         await interaction.response.send_message("👋 Бот вышел из голосового канала.")
+
+    #---------------------------
+
+    @discord.app_commands.command(name="test", description="Плейлист")
+    async def test(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        self.vk_token = "vk1.a.RG196vmO0JXFjKT3-VT31g9L9yvJX5Uq2GHMQol580VObfE-FIchFXFwgvIyy-GcgghlPXpGXamD2yg1z6FHx3oMeIQhe-bHhStyqgcjy8y-_eKwlsEfu6GK8SOyI8v17tmQJBxe8bj3f3Q-vWYBOx5_1MwY6-eKySztj0ggWo74epiCD8U5uc5uLovKjDelQYGZDQdxYtaCqQnXa9ROUg"
+
+        if self.vk_token is None:
+            await self.__get_token()
+
+        service = Service(USER_AGENT, self.vk_token)
+        playlist = service.get_songs_by_userid(267041638, 10)
+        print(playlist)
+
 
     async def start_track(self, voice_client, guild_id, channel, track):
         source = discord.FFmpegOpusAudio(
