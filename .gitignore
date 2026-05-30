@@ -96,7 +96,6 @@ vendor/bundle/
 # ===============================
 target/
 *.class
-*.jar
 *.war
 *.ear
 
