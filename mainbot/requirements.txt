@@ -1,0 +1,10 @@
+discord.py==2.7.1
+email_validator==2.3.0
+lavalink==5.11.0
+loguru==0.7.3
+pydantic==2.13.4
+pydantic_settings==2.14.1
+
+# прокляты в веках
+#yt_dlp==2026.3.17
+#vkpymusic==3.5.1
