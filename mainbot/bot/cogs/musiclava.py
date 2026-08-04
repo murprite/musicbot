@@ -118,9 +118,7 @@ class Musiclava(commands.Cog):
                                   region='us', name='default-node')
 
         self.lavalink = bot.lavalink
-
-    def cog_unload(self):
-        self.lavalink._event_hooks.clear()
+        self.lavalink.add_event_hooks(self)
 
     async def create_player(ctx: commands.Context):
         if ctx.guild is None:
@@ -157,37 +155,43 @@ class Musiclava(commands.Cog):
 
         return True
 
-    @lavalink.listener(TrackStartEvent)
-    async def on_track_start(self, event: TrackStartEvent):
-        guild_id = event.player.guild_id
-        channel_id = event.player.fetch('channel')
-        guild = self.bot.get_guild(guild_id)
+    @lavalink.listener(lavalink.TrackEndEvent)
+    async def on_track_end(self, event: lavalink.TrackEndEvent):
+        logger.info(f"Трек {event.track} закончился... ")
+        event.player.store("last_track", event.track)
 
-        if not guild:
-            return await self.lavalink.player_manager.destroy(guild_id)
+    @lavalink.listener(lavalink.QueueEndEvent)
+    async def on_queue_end(self, event: lavalink.QueueEndEvent):
+        player = event.player
+        logger.info(f"Очередь пуста...")
+        if not player.fetch("is_jam"):
+            return
+        logger.info(f"Режим джема включён")
 
-        channel = guild.get_channel(channel_id)
-        print('Сейчас играет: {} - {}'.format(event.track.author, event.track.title))
-        if channel:
-            await channel.send('Сейчас играет: {} - {}'.format(event.track.author, event.track.title))
+        last_track = player.fetch("last_track")
+        if last_track is None:
+            return
 
-    @lavalink.listener(QueueEndEvent)
-    async def on_queue_end(self, event: QueueEndEvent):
+        regexp = re.compile(r"[?&]v=([A-Za-z0-9_-]{11})")
 
-        guild_id = event.player.guild_id
-        guild = self.bot.get_guild(guild_id)
+        match = regexp.search(last_track.uri)
+        if not match:
+            return
 
-        if guild is not None:
-            await guild.voice_client.disconnect(force=True)
+        video_id = match.group(1)
 
-    # @lavalink.listener(TrackEndEvent)
-    # async def on_track_end(self, event: TrackEndEvent):
-    #     print("Закончил играть")
-    #     guild_id = event.player.guild_id
-    #     guild = self.bot.get_guild(guild_id)
-    #
-    #     if guild is not None:
-    #         await guild.voice_client.disconnect(force=True)
+        results = await player.node.get_tracks(
+            f"https://www.youtube.com/watch?v={video_id}&list=RD{video_id}"
+        )
+
+        if not results or not results.tracks:
+            return
+
+        for track in results.tracks[1:]: # workaround because of yt
+            track.extra["requester"] = last_track.extra["requester"]
+            player.add(track)
+
+        await player.play()
 
     # For syncing
     @commands.Cog.listener()
@@ -226,8 +230,7 @@ class Musiclava(commands.Cog):
         return await interaction.followup.send(embed=embed)
 
     @discord.app_commands.command(name="play", description="Включить музыку")
-    async def play(self, interaction: discord.Interaction, query: str):
-
+    async def play(self, interaction: discord.Interaction, query: str, is_jam: bool):
         await interaction.response.defer()
 
         if not interaction.user.voice:
@@ -244,6 +247,7 @@ class Musiclava(commands.Cog):
 
         # Сохраняем текстовый канал
         player.store("channel", interaction.channel.id)
+        player.store("is_jam", is_jam)
 
         url_rx = re.compile(r'https?://(?:www\.)?.+')
 
